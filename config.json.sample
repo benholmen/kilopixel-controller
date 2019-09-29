@@ -1,0 +1,19 @@
+{
+	"kilopixel_id": 1,
+	"dimensions": {
+		"x": 40,
+		"y": 25
+	},
+	"pixel_width":  45,
+	"pixel_height": 45,
+	"pins": {
+		"actuator_power":  17,
+		"actuator_sensor": 18
+	},
+	"database": {
+		"host":     "",
+		"username": "",
+		"password": "",
+		"database": ""
+	}
+}
