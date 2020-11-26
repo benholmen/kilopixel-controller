@@ -3,6 +3,12 @@
 $100=100	(X steps/mm. Calculate at 16 teeth/rev * 2mm/tooth * 200 steps/rev * 1/16 steps)
 $101=100	(Y steps/mm. Calculate at 16 teeth/rev * 2mm/tooth * 200 steps/rev * 1/16 steps)
 
+$100=53.33	(X steps/mm. Calculate at 30 teeth/rev * 2mm/tooth / 200 steps/rev / 1/16 steps)
+$101=53.33	(Y steps/mm. Calculate at 200 steps/rev / 1/16 steps / 30 teeth/rev / 2mm/tooth)
+
+$110=4000	(TEMP: X max speed mm/min)
+$111=4000	(TEMP: Y max speed mm/min)
+
 $110=8000	(X max speed mm/min)
 $111=8000	(Y max speed mm/min)
 
