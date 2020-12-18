@@ -46,7 +46,8 @@ def still_connected(grbl):
     else:
         return 0
 
-def home_it(grbl):
+def go_home(grbl):
+    print 'Homing'
     # home the machine
     send_gcode(grbl, '$H')
 
@@ -83,11 +84,7 @@ print 'finished setup'
 # report settings
 send_gcode(grbl, '$$')
 
-# home the machine
-send_gcode(grbl, '$H')
-
-# save the work position
-send_gcode(grbl, 'G10 L20 P1 X0 Y0 Z0')
+go_home(grbl)
 
 # send_gcode(grbl, 'G0 X90 Y45')
 # sys.exit()
@@ -112,19 +109,21 @@ while keep_on_looping == 1:
     gcode = 'G0 X' + str(x_real) + ' Y' + str(y_real)
     send_gcode(grbl, gcode)
 
+    # simulate actuating the pixel
     time.sleep(2)
 
     # check if still connected
 #    if still_connected(grbl) == 0:
 #        print 'lost connection'
-#        exit(0)
-
-    if count % 10 == 0:
-        home_it(grbl)
+#        sys.exit(0)
 
     count = count + 1
     if count > 100:
         keep_on_looping = 0
+
+    # re-home the machine periodically to avoid lost steps becoming catastrophic
+    if count % config['rehome_interval'] == 0:
+        go_home(grbl)
 
 
 # close grbl
