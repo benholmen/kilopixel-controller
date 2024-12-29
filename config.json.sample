@@ -10,10 +10,6 @@
 		"actuator_power":  17,
 		"actuator_sensor": 18
 	},
-	"database": {
-		"host":     "",
-		"username": "",
-		"password": "",
-		"database": ""
-	}
+	"api_host": "http://kilopx.com.test",
+	"api_key": "pre shared key"
 }
