@@ -10,21 +10,6 @@ import requests
 import serial
 from random import randint
 
-def check_pixel(x, y):
-	print('checking pixel state for ' + str(x) + ', ' + str('y'))
-	# TODO: maybe take a few readings, average them out, round up/down to get state?
-	pigpio.set_mode(config['pins']['actuator_power'], pigpio.OUTPUT)
-	pigpio.set_mode(config['pins']['actuator_sensor'], pigpio.INPUT)
-
-	# Read value
-	light_sensor = pigpio.read(config['pins']['actuator_sensor'])
-
-	print('light sensor: ' + str(light_sensor))
-
-	pigpio.write(config['pins']['actuator_power'], pigpio.LOW)
-
-	return light_sensor
-
 def change_pixel(x, y, state):
 	print(f'setting {x}, {y} to {state}')
 
@@ -46,7 +31,7 @@ def change_pixel(x, y, state):
 
 	print('✅ done turning')
 
-	return light_sensor
+	return state
 
 def send_gcode_from_file(grbl, filename):
 	# note this probably wouldn't be a great idea for long gcode files. But this application should be VERY short gcode files
@@ -184,13 +169,7 @@ while keep_on_looping == 1:
 	print('next pixel:', str(pixel))
 
 	if pixel is None:
-		print('No pixel to change, checking state instead')
-		# todo: how to determine the best x, y to check?
-		# todo: for now just check one pixel
-		x = 10
-		y = 2
-
-		state = check_pixel()
+		time.sleep(1)
 	else:
 		print('next pixel: ' + str(pixel))
 		x = pixel[0]
@@ -199,8 +178,7 @@ while keep_on_looping == 1:
 		goto_pixel(x, y)
 
 		state = change_pixel(pixel[2])
-
-	save_pixel_state(x, y, state)
+		save_pixel_state(x, y, state)
 
 	# check if still connected
 	if still_connected(grbl) == 0:
