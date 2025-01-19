@@ -68,6 +68,9 @@ def still_connected(grbl):
 	else:
 		return 0
 
+def home():
+	send_gcode('$H')
+
 def goto_pixel(x, y):
 	x_real = x * config['pixel_width']
 	y_real = y * config['pixel_height']
@@ -159,8 +162,7 @@ print('finished setup')
 
 # home grbl which also unlocks it
 # this doesn't really work without proper limit switches
-# gcode = '$H'
-# send_gcode(gcode)
+home()
 
 keep_on_looping = 1
 while keep_on_looping == 1:
@@ -169,7 +171,8 @@ while keep_on_looping == 1:
 	print('next pixel:', str(pixel))
 
 	if pixel is None:
-		time.sleep(1)
+		# park the machine
+		home()
 	else:
 		print('next pixel: ' + str(pixel))
 		x = pixel[0]
