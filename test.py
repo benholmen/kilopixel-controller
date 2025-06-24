@@ -7,7 +7,6 @@ import sys
 import time
 import json
 import serial
-import mysql.connector
 from random import randint
 
 def send_gcode_from_file(grbl, filename):
@@ -38,22 +37,14 @@ def send_gcode(grbl, gcode):
                 time.sleep(0.1)
 
 def still_connected(grbl):
-    grbl.write('$I')
+    grbl.write('$I\n')
     grbl_response = grbl.readline()
+    print '> ', grbl_response, len(grbl_response)
 
     if len(grbl_response) > 0:
         return 1
     else:
         return 0
-
-def go_home(grbl):
-    print 'Homing'
-    # home the machine
-    send_gcode(grbl, '$H')
-
-    # save the work position
-    send_gcode(grbl, 'G10 L20 P1 X0 Y0 Z0')
-
 
 ####################
 ### LOAD CONFIG  ###
@@ -82,49 +73,24 @@ send_gcode_from_file(grbl, 'gcode/setup.gcode')
 print 'finished setup'
 
 # report settings
-send_gcode(grbl, '$$')
+# send_gcode(grbl, '$$')
 
-go_home(grbl)
+print 'sleeping...'
+time.sleep(2)
+print 'finished sleep'
 
-# send_gcode(grbl, 'G0 X90 Y45')
-# sys.exit()
+send_gcode_from_file(grbl, 'test.gcode')
 
-count = 0
 keep_on_looping = 1
 while keep_on_looping == 1:
-    pixel = (0, randint(0, config['dimensions']['x']), randint(0, config['dimensions']['y']), randint(0, 1))
-
-    print 'next pixel: ' + str(pixel)
-
-    pixel_queue_id = pixel[0]
-    x = pixel[1]
-    y = pixel[2]
-    state = pixel[3]
-
-    # generate gcode to go to this pixel
-    x_real = x * config['pixel_width']
-    y_real = y * config['pixel_height']
-
-    # send gcode to grbl
-    gcode = 'G0 X' + str(x_real) + ' Y' + str(y_real)
-    send_gcode(grbl, gcode)
-
-    # simulate actuating the pixel
     time.sleep(2)
+    print '.'
 
-    # check if still connected
-#    if still_connected(grbl) == 0:
-#        print 'lost connection'
-#        sys.exit(0)
-
-    count = count + 1
-    if count > 100:
-        keep_on_looping = 0
-
-    # re-home the machine periodically to avoid lost steps becoming catastrophic
-    if count % config['rehome_interval'] == 0:
-        go_home(grbl)
-
+    if still_connected(grbl) == 0:
+        print 'lost connection'
+        exit(0)
+    else:
+        print 'still connected'
 
 # close grbl
 grbl.close()
