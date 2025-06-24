@@ -1,37 +1,17 @@
 #!/usr/bin/env python
 
-# MASTER CONTROL SCRIPT v0.2.0
-
 import os
 import time
 import pigpio
 import json
 import requests
 import serial
-from random import randint
 
-def change_pixel(x, y, state):
-	print(f'setting {x}, {y} to {state}')
+def read_pixel():
+	light_sensor = pigpio.read(config['pins']['light_sensor'])
+	print('light sensor:', str(light_sensor))
 
-	pigpio.set_mode(config['pins']['actuator_power'], pigpio.OUTPUT)
-	pigpio.set_mode(config['pins']['actuator_sensor'], pigpio.INPUT)
-
-	pigpio.write(config['pins']['actuator_power'], pigpio.HIGH)
-
-	turning = 1
-	while turning > 0:
-		turning += 1
-		light_sensor = pigpio.read(config['pins']['actuator_sensor'])
-		print('light sensor:', str(light_sensor))
-		time.sleep(0.2)
-		if turning > 10:
-			turning = 0
-
-	pigpio.write(config['pins']['actuator_power'], pigpio.LOW)
-
-	print('✅ done turning')
-
-	return state
+	return light_sensor > config['light_sensor_threshold']
 
 def send_gcode_from_file(grbl, filename):
 	# note this probably wouldn't be a great idea for long gcode files. But this application should be VERY short gcode files
@@ -60,7 +40,7 @@ def send_gcode(grbl, gcode):
 				time.sleep(1/500)
 
 def still_connected(grbl):
-	grbl.write('$I')
+	grbl.write('?')
 	grbl_response = grbl.readline()
 
 	if len(grbl_response) > 0:
@@ -72,16 +52,19 @@ def home():
 	send_gcode('$H')
 
 def goto_pixel(x, y):
-	x_real = x * config['pixel_width']
-	y_real = y * config['pixel_height']
-
-	# generate gcode to go to this pixel
-	gcode = 'G0 X' + str(x_real) + ' Y' + str(y_real)
-	print('↘️ beginning move')
+	x_real = x * config['pixel_width'] + config['x_offset']
+	y_real = y * config['pixel_height'] + config['y_offset']
 
 	# send gcode to grbl
-	send_gcode(grbl, gcode)
+	send_gcode(grbl, 'G0 X' + str(x_real) + ' Y' + str(y_real))
+	
 	print('done with move')
+
+def poke_pixel(x, y):
+	x_real = x * config['pixel_width'] + config['x_offset'] + config['poke_slide']
+	send_gcode(grbl, 'G1 Z4')
+	send_gcode(grbl, 'G1 Z8 X' + str(x_real))
+	send_gcode(grbl, 'G1 Z0')
 
 def get_next_pixel():
 	url = f"/api/{config['kilopixel_id']}/next"
@@ -123,7 +106,7 @@ def save_pixel_state(x, y, state):
 		response = conn.getresponse()
 
 		if response.status == 200:
-			print("✅ pixel status saved")
+			print("pixel status saved")
 		else:
 			print("An error occurred when saving the pixel state: HTTP", response.status)
 	except Exception as e:
@@ -131,62 +114,49 @@ def save_pixel_state(x, y, state):
 	finally:
 		conn.close()
 
-####################
-### LOAD CONFIG  ###
+# load config
 with open('config.json') as config_file:
-    config = json.load(config_file)
+	config = json.load(config_file)
 
-# init pins if I want to use GPIO in this script
+# init GPIO to read reflective sensor
 pigpio = pigpio.pi()
 if not pigpio.connected:
-  print('could not init pigpio')
-  exit(0)
+	print('could not init pigpio')
+	exit(0)
+pigpio.set_mode(config['pins']['reflective_sensor'], pigpio.INPUT)
 
 # init grbl
-print('init grbl')
+print('initializing GRBL...')
 grbl = serial.Serial('/dev/ttyUSB0', 115200)
 grbl.write("\r\n\r\n")
-print('...')
 time.sleep(1)
 grbl.flushInput()
-print('...')
 
-# what's the version of grbl?
-send_gcode(grbl, '$I')
-
-# run config grbl
-# not sure if this needs to be run every time but it can't hurt
-print('beginning setup gcode')
+# run config gcode
+print('running setup gcode')
 send_gcode_from_file(grbl, 'gcode/setup.gcode')
-print('finished setup')
 
 # home grbl which also unlocks it
-# this doesn't really work without proper limit switches
 home()
 
 keep_on_looping = 1
 while keep_on_looping == 1:
 	pixel = get_next_pixel()
 
-	print('next pixel:', str(pixel))
-
 	if pixel is None:
 		# park the machine
 		home()
 	else:
 		print('next pixel: ' + str(pixel))
-		x = pixel[0]
-		y = pixel[1]
+		x, y, state = pixel
 
 		goto_pixel(x, y)
+		poke_pixel(x, y)
+		save_pixel_state(x, y, read_pixel())
 
-		state = change_pixel(pixel[2])
-		save_pixel_state(x, y, state)
-
-	# check if still connected
-	if still_connected(grbl) == 0:
+	if ! still_connected(grbl):
 		print('lost connection')
-		exit(0)
+		keep_on_looping = 0
 
 # close grbl
 grbl.close()
