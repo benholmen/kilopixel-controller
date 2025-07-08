@@ -126,7 +126,6 @@ pigpio = pigpio.pi()
 if not pigpio.connected:
 	print('could not init pigpio')
 	exit(0)
-pigpio.set_mode(config['pins']['reflective_sensor'], pigpio.INPUT)
 
 # init grbl
 print('initializing GRBL...')
