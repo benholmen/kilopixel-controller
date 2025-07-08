@@ -11,14 +11,10 @@ import requests
 import serial
 
 def read_pixel():
-	light_sensor = pigpio.read(config['pins']['light_sensor'])
-	print('light sensor:', str(light_sensor))
-
-	return light_sensor > config['light_sensor_threshold']
+	return pigpio.read(config['pins']['light_sensor'])
 
 def send_gcode_from_file(grbl, filename):
 	# note this probably wouldn't be a great idea for long gcode files. But this application should be VERY short gcode files
-	print('opening '+filename)
 	gcode_file = open(filename, 'r')
 	gcode = gcode_file.read()
 	gcode_file.close()
@@ -58,16 +54,19 @@ def goto_pixel(x, y):
 	x_real = x * config['pixel_width'] + config['x_offset']
 	y_real = y * config['pixel_height'] + config['y_offset']
 
-	# send gcode to grbl
+	# move to pixel
 	send_gcode(grbl, 'G0 X' + str(x_real) + ' Y' + str(y_real))
-	
-	print('done with move')
 
 def poke_pixel(x, y):
-	x_real = x * config['pixel_width'] + config['x_offset'] + config['poke_slide']
-	send_gcode(grbl, 'G1 Z4')
-	send_gcode(grbl, 'G1 Z8 X' + str(x_real))
-	send_gcode(grbl, 'G1 Z0')
+	x_real = x * config['pixel_width'] + config['x_offset']
+	y_real = y * config['pixel_height'] + config['y_offset']
+
+	# poke pixel (but don't, temporarily)
+	send_gcode(grbl, 'G0 Z0 X' + str(x_real + config['poke_offset']['x']) + ' Y' + str(y_real + config['poke_offset']['y']))
+	# move right to clear pixel before retracting
+	send_gcode(grbl, 'G0 X' + str(x_real + config['retract_offset']['x']) + ' Y' + str(y_real + config['retract_offset']['y']))
+	# retract
+	send_gcode(grbl, 'G0 Z0')
 
 def get_next_pixel():
 	url = f"/api/{config['kilopixel_id']}/next"
@@ -139,9 +138,7 @@ grbl.flushInput()
 print('running setup gcode')
 send_gcode_from_file(grbl, 'gcode/setup.gcode')
 
-# home grbl which also unlocks it
-home()
-
+# loop forever
 keep_on_looping = 1
 while keep_on_looping == 1:
 	pixel = get_next_pixel()
