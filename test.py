@@ -79,18 +79,11 @@ print 'sleeping...'
 time.sleep(2)
 print 'finished sleep'
 
-send_gcode_from_file(grbl, 'test.gcode')
-
 keep_on_looping = 1
 while keep_on_looping == 1:
-    time.sleep(2)
-    print '.'
+    send_gcode_from_file(grbl, 'test.gcode')
 
-    if still_connected(grbl) == 0:
-        print 'lost connection'
-        exit(0)
-    else:
-        print 'still connected'
+    time.sleep(2)
 
 # close grbl
 grbl.close()
