@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+# Before running this script start pigpiod:
+# sudo pigpiod
+
 import os
 import time
 import pigpio
@@ -148,10 +151,14 @@ while keep_on_looping == 1:
 		home()
 	else:
 		print('next pixel: ' + str(pixel))
-		x, y, state = pixel
+		x, y, poke, state = pixel
 
 		goto_pixel(x, y)
-		poke_pixel(x, y)
+
+		if poke:
+			print('poking')
+			poke_pixel(x, y)
+
 		save_pixel_state(x, y, read_pixel())
 
 	if ! still_connected(grbl):
