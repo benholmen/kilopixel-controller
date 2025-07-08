@@ -69,7 +69,7 @@ def poke_pixel(x, y):
 	send_gcode(grbl, 'G0 Z0')
 
 def get_next_pixel():
-	url = f"/api/{config['kilopixel_id']}/next"
+	url = "/api/" + config['kilopixel_id'] + "/next"
 
 	conn = http.client.HTTPConnection(config['api_host'])
 
@@ -90,9 +90,10 @@ def get_next_pixel():
 		conn.close()
 
 def save_pixel_state(x, y, state):
-	url = f"/api/{config['kilopixel_id']}/pixel"
+	url = "/api/" + config['kilopixel_id'] + "/pixel"
+
 	headers = {
-		"Authorization": f"Bearer {config['api_key']}",
+		"Authorization": "Bearer " + config['api_key'],
 		"Content-Type": "application/x-www-form-urlencoded",
 	}
 	form_data = urllib.parse.urlencode({
@@ -158,7 +159,7 @@ while keep_on_looping == 1:
 
 		save_pixel_state(x, y, read_pixel())
 
-	if ! still_connected(grbl):
+	if not still_connected(grbl):
 		print('lost connection')
 		keep_on_looping = 0
 
