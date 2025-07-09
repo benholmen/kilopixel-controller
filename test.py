@@ -23,21 +23,21 @@ def send_gcode(grbl, gcode):
         line = line.strip()
         if len(line) > 1:
             print('Sending ', line)
-            grbl.write(line + '\n')
+            grbl.write(f"{line}\n".encode())
             grbl_response = grbl.readline()
-            print(' : ' + grbl_response.strip())
+            print(": ", grbl_response.strip())
 
             # check status
-            grbl.write('?')
+            grbl.write(b"?")
             grbl_status = grbl.readline()
-            while grbl_status.find('Idle') == -1:
+            while grbl_status.find("Idle".encode()) == -1:
                 print('> ', grbl_status, "               \r",)
-                grbl.write('?')
+                grbl.write(b"?")
                 grbl_status = grbl.readline()
                 time.sleep(0.1)
 
 def still_connected(grbl):
-    grbl.write('$I\n')
+    grbl.write(b"$I\n")
     grbl_response = grbl.readline()
     print('> ', grbl_response, len(grbl_response))
 
@@ -54,7 +54,7 @@ with open('config.json') as config_file:
 # init grbl
 print('init grbl')
 grbl = serial.Serial('/dev/ttyUSB0', 115200)
-grbl.write("\r\n\r\n")
+grbl.write(b"\r\n\r\n")
 print('...')
 time.sleep(2)
 grbl.flushInput()
