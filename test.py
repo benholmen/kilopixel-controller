@@ -11,7 +11,7 @@ from random import randint
 
 def send_gcode_from_file(grbl, filename):
     # note this probably wouldn't be a great idea for long gcode files. But this application should be VERY short gcode files
-    print 'opening '+filename
+    print('opening '+filename)
     gcode_file = open(filename, 'r')
     gcode = gcode_file.read()
     gcode_file.close()
@@ -22,16 +22,16 @@ def send_gcode(grbl, gcode):
     for line in gcode.splitlines():
         line = line.strip()
         if len(line) > 1:
-            print 'Sending ', line
+            print('Sending ', line)
             grbl.write(line + '\n')
             grbl_response = grbl.readline()
-            print ' : ' + grbl_response.strip()
+            print(' : ' + grbl_response.strip())
 
             # check status
             grbl.write('?')
             grbl_status = grbl.readline()
             while grbl_status.find('Idle') == -1:
-                print '> ', grbl_status, "               \r",
+                print('> ', grbl_status, "               \r",)
                 grbl.write('?')
                 grbl_status = grbl.readline()
                 time.sleep(0.1)
@@ -39,7 +39,7 @@ def send_gcode(grbl, gcode):
 def still_connected(grbl):
     grbl.write('$I\n')
     grbl_response = grbl.readline()
-    print '> ', grbl_response, len(grbl_response)
+    print('> ', grbl_response, len(grbl_response))
 
     if len(grbl_response) > 0:
         return 1
@@ -52,13 +52,13 @@ with open('config.json') as config_file:
     config = json.load(config_file)
 
 # init grbl
-print 'init grbl'
+print('init grbl')
 grbl = serial.Serial('/dev/ttyUSB0', 115200)
 grbl.write("\r\n\r\n")
-print '...'
+print('...')
 time.sleep(2)
 grbl.flushInput()
-print '...'
+print('...')
 
 # clear any alarms (probably due to failed homing)
 send_gcode(grbl, '$X')
@@ -68,16 +68,16 @@ send_gcode(grbl, '$I')
 
 # run grbl config
 # not sure if this needs to be run every time but it can't hurt
-print 'beginning setup gcode'
+print('beginning setup gcode')
 send_gcode_from_file(grbl, 'gcode/setup.gcode')
-print 'finished setup'
+print('finished setup')
 
 # report settings
 # send_gcode(grbl, '$$')
 
-print 'sleeping...'
+print('sleeping...')
 time.sleep(2)
-print 'finished sleep'
+print('finished sleep')
 
 keep_on_looping = 1
 while keep_on_looping == 1:
