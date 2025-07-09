@@ -22,24 +22,25 @@ def send_gcode_from_file(grbl, filename):
 	send_gcode(grbl, gcode)
 
 def send_gcode(grbl, gcode):
-	for line in gcode.splitlines():
-		line = line.strip()
-		if len(line) > 1:
-			print('Sending ' + line)
-			grbl.write(line + '\n')
-			grbl_response = grbl.readline()
-			print(' : ' + grbl_response.strip())
+    for line in gcode.splitlines():
+        line = line.strip()
+        if len(line) > 1:
+            print('Sending ', line)
+            grbl.write(f"{line}\n".encode())
+            grbl_response = grbl.readline()
+            print(": ", grbl_response.strip())
 
-			# check status
-			grbl.write('?')
-			grbl_status = grbl.readline()
-			while grbl_status.find('Idle') == -1:
-				grbl.write('?')
-				grbl_status = grbl.readline()
-				time.sleep(1/500)
+            # check status
+            grbl.write(b"?")
+            grbl_status = grbl.readline()
+            while grbl_status.find("Idle".encode()) == -1:
+                print('> ', grbl_status, "               \r",)
+                grbl.write(b"?")
+                grbl_status = grbl.readline()
+                time.sleep(0.1)
 
 def still_connected(grbl):
-	grbl.write('?')
+	grbl.write(b"?")
 	grbl_response = grbl.readline()
 
 	if len(grbl_response) > 0:
@@ -130,7 +131,7 @@ if not pigpio.connected:
 # init grbl
 print('initializing GRBL...')
 grbl = serial.Serial('/dev/ttyUSB0', 115200)
-grbl.write("\r\n\r\n")
+grbl.write(b"\r\n\r\n")
 time.sleep(1)
 grbl.flushInput()
 
