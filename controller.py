@@ -9,9 +9,11 @@ import pigpio
 import json
 import requests
 import serial
+import http.client
+import urllib
 
 def read_pixel():
-	return pigpio.read(config['pins']['light_sensor'])
+	return 'X' if pigpio.read(config['pins']['reflective_sensor']) else 'O'
 
 def send_gcode_from_file(grbl, filename):
 	# note this probably wouldn't be a great idea for long gcode files. But this application should be VERY short gcode files
@@ -52,27 +54,27 @@ def home():
 	send_gcode('$H')
 
 def goto_pixel(x, y):
-	x_real = x * config['pixel_width'] + config['x_offset']
-	y_real = y * config['pixel_height'] + config['y_offset']
+	x_real = (x - 1) * config['pixel_width'] + config['x_offset']
+	y_real = (y - 1) * config['pixel_height'] + config['y_offset']
 
 	# move to pixel
 	send_gcode(grbl, 'G0 X' + str(x_real) + ' Y' + str(y_real))
 
 def poke_pixel(x, y):
-	x_real = x * config['pixel_width'] + config['x_offset']
-	y_real = y * config['pixel_height'] + config['y_offset']
+	x_real = (x - 1) * config['pixel_width'] + config['x_offset']
+	y_real = (y - 1) * config['pixel_height'] + config['y_offset']
 
 	# poke pixel (but don't, temporarily)
-	send_gcode(grbl, 'G0 Z0 X' + str(x_real + config['poke_offset']['x']) + ' Y' + str(y_real + config['poke_offset']['y']))
+	send_gcode(grbl, 'G0 Z4 X' + str(x_real + config['poke_offset']['x']) + ' Y' + str(y_real + config['poke_offset']['y']))
 	# move right to clear pixel before retracting
 	send_gcode(grbl, 'G0 X' + str(x_real + config['retract_offset']['x']) + ' Y' + str(y_real + config['retract_offset']['y']))
 	# retract
 	send_gcode(grbl, 'G0 Z0')
 
 def get_next_pixel():
-	url = "/api/" + config['kilopixel_id'] + "/next"
+	url = "/api/" + str(config['kilopixel_id']) + "/next"
 
-	conn = http.client.HTTPConnection(config['api_host'])
+	conn = http.client.HTTPSConnection(config['api_host'])
 
 	try:
 		conn.request("GET", url)
@@ -91,7 +93,7 @@ def get_next_pixel():
 		conn.close()
 
 def save_pixel_state(x, y, state):
-	url = "/api/" + config['kilopixel_id'] + "/pixel"
+	url = "/api/" + str(config['kilopixel_id']) + "/pixel"
 
 	headers = {
 		"Authorization": "Bearer " + config['api_key'],
@@ -103,7 +105,7 @@ def save_pixel_state(x, y, state):
 		"state": state,
 	})
 
-	conn = http.client.HTTPConnection(config['api_host'])
+	conn = http.client.HTTPSConnection(config['api_host'])
 
 	try:
 		conn.request("PUT", url, body=form_data, headers=headers)
@@ -149,15 +151,19 @@ while keep_on_looping == 1:
 		home()
 	else:
 		print('next pixel: ' + str(pixel))
-		x, y, poke, state = pixel
+		print(pixel['x'], pixel['y'], pixel['poke'], pixel['state'])
+        
+		pixel['x'] = 32
+		pixel['y'] = 2
+		pixel['poke'] = False
 
-		goto_pixel(x, y)
+		goto_pixel(pixel['x'], pixel['y'])
 
-		if poke:
+		if pixel['poke']:
 			print('poking')
-			poke_pixel(x, y)
+			poke_pixel(pixel['x'], pixel['y'])
 
-		save_pixel_state(x, y, read_pixel())
+		save_pixel_state(pixel['x'], pixel['y'], read_pixel())
 
 	if not still_connected(grbl):
 		print('lost connection')
