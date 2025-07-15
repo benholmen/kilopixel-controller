@@ -14,7 +14,7 @@
 	},
 	"retract_offset": {
 		"x": 11,
-		"y": 0
+		"y": 3
 	},
 	"light_sensor_threshold": 0.5,
 	"pins": {
