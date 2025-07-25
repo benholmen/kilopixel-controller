@@ -92,8 +92,6 @@ def get_next_pixel():
 			print("An error occurred when getting the next pixel: HTTP", response.status)
 	except Exception as e:
 		print("An error occurred when getting the next pixel:", e)
-	finally:
-		conn.close()
 
 def save_pixel_state(x, y, state):
 	url = "/api/" + str(config['kilopixel_id']) + "/pixel"
@@ -113,17 +111,17 @@ def save_pixel_state(x, y, state):
 		conn.request("PUT", url, body=form_data, headers=headers)
 		response = conn.getresponse()
 
+		response_data = response.read().decode()
 		if response.status == 200:
 			elapsed = time.time() - start_time
 			print("PUT time:", str(int(elapsed * 1000)), "ms")
+			print(response_data);
 
-			return json.loads(response.read().decode())
+			return json.loads(response_data)
 		else:
 			print("An error occurred when saving the pixel state: HTTP", response.status)
 	except Exception as e:
 		print("An error occurred when saving the pixel state:", e)
-	finally:
-		conn.close()
 
 # load config
 with open('config.json') as config_file:
