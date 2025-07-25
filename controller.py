@@ -12,9 +12,6 @@ import serial
 import http.client
 import urllib
 
-def read_pixel():
-	return 'X' if pigpio.read(config['pins']['reflective_sensor']) else 'O'
-
 def send_gcode_from_file(grbl, filename):
 	# note this probably wouldn't be a great idea for long gcode files. But this application should be VERY short gcode files
 	gcode_file = open(filename, 'r')
@@ -53,25 +50,30 @@ def still_connected(grbl):
 def home():
 	send_gcode('$H')
 
-def goto_pixel(x, y):
+def poke_pixel(x, y):
 	x_real = x * config['pixel_width'] + config['x_offset']
 	y_real = y * config['pixel_height'] + config['y_offset']
 
 	# move to pixel
 	send_gcode(grbl, 'G0 X' + str(x_real) + ' Y' + str(y_real))
 
-def poke_pixel(x, y):
-	x_real = x * config['pixel_width'] + config['x_offset']
-	y_real = y * config['pixel_height'] + config['y_offset']
-
 	# poke pixel
-	send_gcode(grbl, 'G0 Z4 X' + str(x_real + config['poke_offset']['x']) + ' Y' + str(y_real + config['poke_offset']['y']))
+	send_gcode(grbl, 'G0 Z5 X' + str(x_real + config['poke_offset']['x']) + ' Y' + str(y_real + config['poke_offset']['y']))
 
 	# move right to clear pixel and retract
 	send_gcode(grbl, 'G0 Z0 X' + str(x_real + config['retract_offset']['x']) + ' Y' + str(y_real + config['retract_offset']['y']))
 
 	# back off
-	send_gcode(grbl, 'G0 Z0.3')
+	send_gcode(grbl, 'G0 Z0.2')
+
+def read_pixel(x, y):
+	x_real = x * config['pixel_width'] + config['x_offset']
+	y_real = y * config['pixel_height'] + config['y_offset']
+
+	# move to reading position
+	send_gcode(grbl, 'G1 X' + str(x_real + config['read_offset']['x']) + ' Y' + str(y_real + config['read_offset']['y']) + 'F5000')
+
+	return 'O' if pigpio.read(config['pins']['reflective_sensor']) else 'X'
 
 def get_next_pixel():
 	url = "/api/" + str(config['kilopixel_id']) + "/next"
@@ -105,6 +107,8 @@ def save_pixel_state(x, y, state):
 		"y": y,
 		"state": state,
 	})
+
+	print(str(form_data))
 
 	try:
 		start_time = time.time()
@@ -157,17 +161,13 @@ while keep_on_looping == 1:
 	else:
 		print('next pixel: ' + str(pixel))
         
-		# pixel['x'] = 2
-		# pixel['y'] = 2
-		pixel['poke'] = True
-
-		goto_pixel(pixel['x'], pixel['y'])
-
 		if pixel['poke']:
 			print('poking')
 			poke_pixel(pixel['x'], pixel['y'])
 
-		pixel = save_pixel_state(pixel['x'], pixel['y'], read_pixel())
+		pixel_state = read_pixel(pixel['x'], pixel['y'])
+
+		pixel = save_pixel_state(pixel['x'], pixel['y'], pixel_state)
 
 	if not still_connected(grbl):
 		print('lost connection')

@@ -10,7 +10,7 @@ $110=6000	(X max speed mm/min: top tested speed 8000)
 $111=6000	(Y max speed mm/min: top tested speed 6000)
 $112=300	(Z max speed mm/min: top tested speed 800+; 400 is good)
 
-$120=1200	(X max accel mm^2/min)
+$120=400	(X max accel mm^2/min)
 $121=400	(Y max accel mm^2/min)
 $122=300	(Z max accel mm^2/min)
 
@@ -30,6 +30,4 @@ $27=1.00	(homing pull-off, in mm: I want this to be enough to clear the limit sw
 $1=255		(step idle delay: keep the steppers powered and locked all the time. Could also turn them off by setting to 0 to save power/heat but might lose steps)
 
 $H
-
-$10=3		(Status Report: Machine Position and Work Position)
 
