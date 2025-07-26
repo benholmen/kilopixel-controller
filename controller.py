@@ -162,6 +162,7 @@ while keep_on_looping == 1:
 	if pixel['x'] is None or pixel['y'] is None:
 		# do nothing
 		time.sleep(5)
+		pixel = get_next_pixel()
 	else:
 		print('next pixel: ' + str(pixel))
         
