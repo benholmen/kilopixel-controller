@@ -155,6 +155,10 @@ conn = http.client.HTTPSConnection(config['api_host'])
 keep_on_looping = 1
 pixel = get_next_pixel()
 while keep_on_looping == 1:
+	# reload config
+	with open('config.json') as config_file:
+		config = json.load(config_file)
+		
 	if pixel['x'] is None or pixel['y'] is None:
 		# do nothing
 		time.sleep(5)
