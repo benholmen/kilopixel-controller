@@ -50,6 +50,9 @@ def still_connected(grbl):
 def home():
 	send_gcode('$H')
 
+def park():
+	send_gcode(grbl, 'G0 X' + str(config['x_max_travel']) + ' Y' + str(config['y_max_travel']))
+
 def poke_pixel(x, y):
 	x_real = x * config['pixel_width'] + config['x_offset']
 	y_real = y * config['pixel_height'] + config['y_offset']
@@ -160,7 +163,9 @@ while keep_on_looping == 1:
 		config = json.load(config_file)
 		
 	if pixel['x'] is None or pixel['y'] is None:
-		# do nothing
+		# submission likely just finished
+		# park the machine for a nice timelapse before getting the next pixel
+		park()
 		time.sleep(5)
 		pixel = get_next_pixel()
 	else:
