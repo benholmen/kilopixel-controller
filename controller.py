@@ -162,7 +162,7 @@ while keep_on_looping == 1:
 	with open('config.json') as config_file:
 		config = json.load(config_file)
 		
-	if pixel['x'] is None or pixel['y'] is None:
+	if pixel is None or pixel['x'] is None or pixel['y'] is None:
 		# submission likely just finished
 		# park the machine for a nice timelapse before getting the next pixel
 		park()
