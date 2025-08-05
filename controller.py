@@ -61,7 +61,7 @@ def poke_pixel(x, y):
 	send_gcode(grbl, 'G0 X' + str(x_real) + ' Y' + str(y_real))
 
 	# poke pixel
-	send_gcode(grbl, 'G0 Z5 X' + str(x_real + config['poke_offset']['x']) + ' Y' + str(y_real + config['poke_offset']['y']))
+	send_gcode(grbl, 'G0 Z4.5 X' + str(x_real + config['poke_offset']['x']) + ' Y' + str(y_real + config['poke_offset']['y']))
 
 	# move right to clear pixel and retract
 	send_gcode(grbl, 'G0 Z0 X' + str(x_real + config['retract_offset']['x']) + ' Y' + str(y_real + config['retract_offset']['y']))
