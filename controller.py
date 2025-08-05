@@ -170,8 +170,12 @@ while keep_on_looping == 1:
 		pixel = get_next_pixel()
 	else:
 		print('next pixel: ' + str(pixel))
+
+		current_pixel_state = read_pixel(pixel['x'], pixel['y'])
         
-		if pixel['poke']:
+		if pixel['poke'] and current_pixel_state.lower() == pixel['state'].lower():
+			print('no need to poke')
+		elif pixel['poke']:
 			print('poking')
 			poke_pixel(pixel['x'], pixel['y'])
 
