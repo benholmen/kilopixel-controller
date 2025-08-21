@@ -48,7 +48,7 @@ def still_connected(grbl):
 		return 0
 
 def home():
-	send_gcode('$H')
+	send_gcode(grbl, '$H')
 
 def park():
 	send_gcode(grbl, 'G0 X' + str(config['x_max_travel']) + ' Y' + str(config['y_max_travel']))
@@ -156,6 +156,7 @@ conn = http.client.HTTPSConnection(config['api_host'])
 
 # loop forever
 keep_on_looping = 1
+pixels_since_last_home = 0
 pixel = get_next_pixel()
 while keep_on_looping == 1:
 	# reload config
@@ -167,6 +168,10 @@ while keep_on_looping == 1:
 		# park the machine for a nice timelapse before getting the next pixel
 		park()
 		time.sleep(5)
+		if pixels_since_last_home > 500:
+			home()
+			pixels_since_last_home = 0
+
 		pixel = get_next_pixel()
 	else:
 		print('next pixel: ' + str(pixel))
@@ -181,7 +186,16 @@ while keep_on_looping == 1:
 
 		pixel_state = read_pixel(pixel['x'], pixel['y'])
 
+		if pixel['poke'] and pixel_state.lower() != pixel['state'].lower():
+			# poke the pixel again just in case
+			print('repoking pixel: ' + pixel_state.lower() + ' - ' + pixel['state'].lower())
+			poke_pixel(pixel['x'], pixel['y'])
+
+			pixel_state = read_pixel(pixel['x'], pixel['y'])
+
+		pixels_since_last_home += 1
 		pixel = save_pixel_state(pixel['x'], pixel['y'], pixel_state)
+
 
 	if not still_connected(grbl):
 		print('lost connection')
