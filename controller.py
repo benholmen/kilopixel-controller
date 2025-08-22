@@ -9,6 +9,7 @@ import pigpio
 import json
 import requests
 import serial
+import sys
 import http.client
 import urllib
 
@@ -155,24 +156,28 @@ send_gcode_from_file(grbl, 'gcode/setup.gcode')
 conn = http.client.HTTPSConnection(config['api_host'])
 
 # loop forever
-keep_on_looping = 1
 pixels_since_last_home = 0
 pixel = get_next_pixel()
-while keep_on_looping == 1:
+while True:
 	# reload config
 	with open('config.json') as config_file:
 		config = json.load(config_file)
 		
 	if pixel is None or pixel['x'] is None or pixel['y'] is None:
 		# submission likely just finished
-		# park the machine for a nice timelapse before getting the next pixel
-		park()
-		time.sleep(5)
-		if pixels_since_last_home > 500:
-			home()
-			pixels_since_last_home = 0
+		if "--stop-on-no-pixel" in sys.argv:
+			print('pixel is None, parking + exiting')
+			park()
+			break
+		else:
+			# park the machine for a nice timelapse before getting the next pixel
+			park()
+			time.sleep(5)
+			if pixels_since_last_home > 500:
+				home()
+				pixels_since_last_home = 0
 
-		pixel = get_next_pixel()
+			pixel = get_next_pixel()
 	else:
 		print('next pixel: ' + str(pixel))
 
@@ -199,7 +204,7 @@ while keep_on_looping == 1:
 
 	if not still_connected(grbl):
 		print('lost connection')
-		keep_on_looping = 0
+		break
 
 # close grbl
 grbl.close()
