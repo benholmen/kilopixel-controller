@@ -25,16 +25,16 @@ def send_gcode(grbl, gcode):
     for line in gcode.splitlines():
         line = line.strip()
         if len(line) > 1:
-            print(line)
+            print("    ", line)
             grbl.write(f"{line}\n".encode())
             grbl_response = grbl.readline()
-            print("    ", grbl_response.decode('utf-8').strip())
+            print("        ", grbl_response.decode('utf-8').strip())
 
             # check status
             grbl.write(b"?")
             grbl_status = grbl.readline()
             while grbl_status.find("Idle".encode()) == -1:
-                print('    ', grbl_status.decode('utf-8').strip())
+                print('        ', grbl_status.decode('utf-8').strip())
                 grbl.write(b"?")
                 grbl_status = grbl.readline()
                 time.sleep(0.1)
@@ -162,7 +162,11 @@ while True:
 	# reload config
 	with open('config.json') as config_file:
 		config = json.load(config_file)
-		
+
+	if pixels_since_last_home > 100:
+		home()
+		pixels_since_last_home = 0
+
 	if pixel is None or pixel['x'] is None or pixel['y'] is None:
 		# submission likely just finished
 		if "--stop-on-no-pixel" in sys.argv:
@@ -173,10 +177,6 @@ while True:
 			# park the machine for a nice timelapse before getting the next pixel
 			park()
 			time.sleep(5)
-			if pixels_since_last_home > 500:
-				home()
-				pixels_since_last_home = 0
-
 			pixel = get_next_pixel()
 	else:
 		print('next pixel: ' + str(pixel))
@@ -193,7 +193,7 @@ while True:
 
 		if pixel['poke'] and pixel_state.lower() != pixel['state'].lower():
 			# poke the pixel again just in case
-			print('repoking pixel: ' + pixel_state.lower() + ' - ' + pixel['state'].lower())
+			print('!! repoking pixel: ' + pixel_state.lower() + ' - ' + pixel['state'].lower())
 			poke_pixel(pixel['x'], pixel['y'])
 
 			pixel_state = read_pixel(pixel['x'], pixel['y'])
