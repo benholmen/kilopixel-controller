@@ -1,3 +1,10 @@
+# /// script
+# dependencies = [
+#   "requests",
+#   "Pillow",
+#   "python-escpos",
+# ]
+# ///
 import requests
 from datetime import datetime
 from PIL import Image, ImageDraw
