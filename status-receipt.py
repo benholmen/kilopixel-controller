@@ -80,14 +80,15 @@ def main():
         print_image_chunks(p, grid_img)
 
     # Stats
-    p.text(f"Status as of: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-    p.text(f"Mode:           {mode}\n")
-    p.text(f"Pending pixels: {pending:,}\n")
-    p.text(f"Changed (1h):   {changed_1h}\n")
-    p.text(f"Changed (24h):  {changed_24h}\n")
-    p.text(f"Total changes:  {total}\n")
 
-    p.text("\n\n\n")
+    p.text("\n\n")
+    p.text(f"Status as of:    {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+    p.text(f"Mode:            {mode}\n")
+    p.text(f"Pending pixels:  {pending:,}\n")
+    p.text(f"Changed 1h:      {changed_1h}\n")
+    p.text(f"Changed 24h:     {changed_24h}\n")
+    p.text(f"Total changes:   {total}\n")
+
     p.cut()
     p.close()
     print("Done!")
