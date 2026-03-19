@@ -3,6 +3,7 @@
 #   "requests",
 #   "Pillow",
 #   "python-escpos",
+#   "pyserial",
 # ]
 # ///
 import requests
