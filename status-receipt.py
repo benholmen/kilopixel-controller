@@ -19,12 +19,12 @@ OPTIMAL_HEIGHT = 48
 API_URL = "https://kilopx.com/api/1/health"
 
 # Grayscale fill per pixel state (0=black printed, 255=white unprinted)
-# Mirrors the TRMNL display: O (off) is darkest, X (on) is lightest
+# Inverted from display: X (on) is dark, O (off) is light
 PIXEL_FILL = {
-    "O": 0,    # off        → solid black
-    "o": 80,   # pending off → dark gray
-    "x": 175,  # pending on  → light gray
-    "X": 240,  # on          → near white
+    "X": 0,    # on          → solid black
+    "x": 80,   # pending on  → dark gray
+    "o": 175,  # pending off → light gray
+    "O": 240,  # off         → near white
 }
 DEFAULT_FILL = 128  # unknown
 
@@ -74,23 +74,13 @@ def main():
     p = Serial(devfile=PORT, baudrate=BAUD, dsrdtr=True)
     p.hw("init")
 
-    # Header
-    p.set(align="center", bold=True, double_height=True, double_width=True)
-    p.text("KILOPIXEL\n")
-    p.set(align="center", bold=False, double_height=False, double_width=False)
-    p.text(datetime.now().strftime("%Y-%m-%d  %H:%M:%S") + "\n")
-    p.text("-" * 48 + "\n")
-
     # 40×25 pixel grid
     if state:
         grid_img = render_pixel_grid(state)
         print_image_chunks(p, grid_img)
 
-    p.text("\n")
-    p.text("-" * 48 + "\n")
-
     # Stats
-    p.set(align="left")
+    p.text(f"Status as of: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
     p.text(f"Mode:           {mode}\n")
     p.text(f"Pending pixels: {pending:,}\n")
     p.text(f"Changed (1h):   {changed_1h}\n")
