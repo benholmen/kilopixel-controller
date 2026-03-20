@@ -29,25 +29,19 @@ PIXEL_FILL = {
 DEFAULT_FILL = 128  # unknown
 
 
-def render_pixel_grid(state, cell_size=14):
+def render_pixel_grid(state):
     rows = len(state)
     cols = max(len(row) for row in state) if state else 40
 
-    img = Image.new("L", (MAX_WIDTH, rows * cell_size), 255)
-    draw = ImageDraw.Draw(img)
-
-    x_offset = (MAX_WIDTH - cols * cell_size) // 2
-
+    # Render at native resolution, one pixel per cell
+    native = Image.new("L", (cols, rows), 255)
     for r, row in enumerate(state):
         for c, pixel in enumerate(row):
-            fill = PIXEL_FILL.get(pixel, DEFAULT_FILL)
-            x0 = x_offset + c * cell_size
-            y0 = r * cell_size
-            x1 = x0 + cell_size - 1
-            y1 = y0 + cell_size - 1
-            draw.rectangle([x0, y0, x1, y1], fill=fill)
+            native.putpixel((c, r), PIXEL_FILL.get(pixel, DEFAULT_FILL))
 
-    return img
+    # Scale to full receipt width using nearest-neighbor (preserves crisp pixels)
+    out_h = MAX_WIDTH * rows // cols
+    return native.resize((MAX_WIDTH, out_h), Image.Resampling.NEAREST)
 
 
 def print_image_chunks(p, img):
