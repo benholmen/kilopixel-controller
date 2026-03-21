@@ -82,18 +82,25 @@ def print_receipt():
     p.profile.profile_data["media"]["width"]["pixels"] = MAX_WIDTH
     p.hw("init")
 
+    p.set(align="center", bold=True)
+    p.text("kilopixel")
+    p.set(bold=True)
+    p.text("SHIFT - Eau Claire, WI")
+    p.text("\n\n")
+    p.hw("init")
+
     if state:
         grid_img = render_pixel_grid(state)
         print_image_chunks(p, grid_img)
 
     now = datetime.now()
     p.text("\n\n")
-    p.text(f"Status as of:    {now.strftime('%Y-%m-%d %H:%M:%S')}\n")
-    p.text(f"Mode:            {mode}\n")
-    p.text(f"Pending pixels:  {pending:,}\n")
-    p.text(f"Changed 1h:      {changed_1h}\n")
-    p.text(f"Changed 24h:     {changed_24h}\n")
-    p.text(f"Total changes:   {total}\n")
+    p.text(f"   Status as of:    {now.strftime('%Y-%m-%d %H:%M:%S')}\n")
+    p.text(f"   Mode:            {mode}\n")
+    p.text(f"   Pending pixels:  {pending:,}\n")
+    p.text(f"   Changed 1h:      {changed_1h}\n")
+    p.text(f"   Changed 24h:     {changed_24h}\n")
+    p.text(f"   Total changes:   {total}\n")
     p.cut()
     p.close()
 
