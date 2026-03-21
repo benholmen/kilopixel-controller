@@ -11,7 +11,6 @@
 #
 # Wiring:
 #   Button: GPIO BUTTON_GPIO → button → GND  (internal pull-up enabled)
-#   LED:    GPIO LED_GPIO → 220Ω resistor → LED+ → LED− → GND
 
 import signal
 import sys
@@ -25,7 +24,6 @@ from PIL import Image
 from escpos.printer import Serial
 
 BUTTON_GPIO = 17  # BCM pin; wired button-to-GND
-LED_GPIO = 27  # BCM pin; wired via resistor to LED anode
 
 SERIAL_PORT = "/dev/ttyUSB0"
 BAUD = 115200
@@ -82,11 +80,11 @@ def print_receipt():
     p.profile.profile_data["media"]["width"]["pixels"] = MAX_WIDTH
     p.hw("init")
 
+    p.set(align="center", bold=True, double_height=True, double_width=True)
+    p.text("kilopixel\n")
+    p.hw("init")
     p.set(align="center", bold=True)
-    p.text("kilopixel")
-    p.set(bold=True)
-    p.text("SHIFT - Eau Claire, WI")
-    p.text("\n\n")
+    p.text("\nSHIFT - Eau Claire, WI\n\n")
     p.hw("init")
 
     if state:
@@ -95,12 +93,14 @@ def print_receipt():
 
     now = datetime.now()
     p.text("\n\n")
-    p.text(f"   Status as of:    {now.strftime('%Y-%m-%d %H:%M:%S')}\n")
-    p.text(f"   Mode:            {mode}\n")
-    p.text(f"   Pending pixels:  {pending:,}\n")
-    p.text(f"   Changed 1h:      {changed_1h}\n")
-    p.text(f"   Changed 24h:     {changed_24h}\n")
-    p.text(f"   Total changes:   {total}\n")
+    p.text(f"    Status as of:      {now.strftime('%Y-%m-%d %H:%M')}\n")
+    p.text(f"    Mode:              {mode}\n")
+    p.text(f"    Pending pixels:    {pending:,}\n")
+    p.text(f"    Changed 1h:        {changed_1h}\n")
+    p.text(f"    Changed 24h:       {changed_24h}\n")
+    p.text(f"    Changed all time:  {total}\n\n")
+    p.set(align="center")
+    p.text("kilopx.com")
     p.cut()
     p.close()
 
@@ -120,9 +120,6 @@ class ButtonHandler:
         pi.set_pull_up_down(BUTTON_GPIO, pigpio.PUD_UP)
         pi.set_glitch_filter(BUTTON_GPIO, GLITCH_FILTER_US)
 
-        pi.set_mode(LED_GPIO, pigpio.OUTPUT)
-        pi.write(LED_GPIO, 0)
-
         self._cb = pi.callback(BUTTON_GPIO, pigpio.FALLING_EDGE, self._on_press)
 
     def _on_press(self, gpio, level, tick):
@@ -134,18 +131,15 @@ class ButtonHandler:
         self._last_press = now
         print("Button pressed, printing receipt...")
         self._busy = True
-        self.pi.write(LED_GPIO, 1)
         try:
             print_receipt()
         except Exception as e:
             print(f"[ERROR] Receipt failed: {e}", file=sys.stderr)
         finally:
-            self.pi.write(LED_GPIO, 0)
             self._busy = False
 
     def cancel(self):
         self._cb.cancel()
-        self.pi.write(LED_GPIO, 0)
 
 
 def main():
