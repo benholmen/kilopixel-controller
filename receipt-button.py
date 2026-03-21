@@ -121,7 +121,8 @@ class ButtonHandler:
     def _on_press(self, gpio, level, tick):
         now = time.monotonic()
         if self._busy or (now - self._last_press) < COOLDOWN_S:
-            print(f"[WARN] In cooldown period, {(now - self._last_press)} remain")
+            remaining_seconds = COOLDOWN_S - (now - self._last_press)
+            print(f"[WARN] In cooldown period, {remaining_seconds:.1f}s remain")
             return
         self._last_press = now
         print("Button pressed, printing receipt...")
