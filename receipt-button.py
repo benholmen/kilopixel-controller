@@ -79,6 +79,7 @@ def print_receipt():
     total = data.get("pixel_change_count_formatted", "0")
 
     p = Serial(devfile=SERIAL_PORT, baudrate=BAUD, dsrdtr=True)
+    p.profile.profile_data["media"]["width"]["pixels"] = MAX_WIDTH
     p.hw("init")
 
     if state:
@@ -120,8 +121,10 @@ class ButtonHandler:
     def _on_press(self, gpio, level, tick):
         now = time.monotonic()
         if self._busy or (now - self._last_press) < COOLDOWN_S:
+            print(f"[WARN] In cooldown period, {(now - self._last_press)} remain")
             return
         self._last_press = now
+        print("Button pressed, printing receipt...")
         self._busy = True
         self.pi.write(LED_GPIO, 1)
         try:
