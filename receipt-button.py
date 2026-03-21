@@ -24,25 +24,25 @@ import requests
 from PIL import Image
 from escpos.printer import Serial
 
-BUTTON_GPIO    = 17        # BCM pin; wired button-to-GND
-LED_GPIO       = 27        # BCM pin; wired via resistor to LED anode
+BUTTON_GPIO = 17  # BCM pin; wired button-to-GND
+LED_GPIO = 27  # BCM pin; wired via resistor to LED anode
 
-SERIAL_PORT    = "/dev/ttyUSB0"
-BAUD           = 115200
-MAX_WIDTH      = 512
-OPTIMAL_HEIGHT = 48
+SERIAL_PORT = "/dev/ttyUSB0"
+BAUD = 115200
+MAX_WIDTH = 512
+OPTIMAL_HEIGHT = 400
 
-API_URL        = "https://kilopx.com/api/1/health"
-LOG_FILE       = Path.home() / "receipts.log"
+API_URL = "https://kilopx.com/api/1/health"
+LOG_FILE = Path.home() / "receipts.log"
 
-GLITCH_FILTER_US = 50_000   # pigpio drops transitions shorter than this (µs)
-COOLDOWN_S       = 3.0      # ignore re-presses within this window
+GLITCH_FILTER_US = 50_000  # pigpio drops transitions shorter than this (µs)
+COOLDOWN_S = 5.0  # ignore re-presses within this window
 
 PIXEL_FILL = {
-    "X": 0,     # on          → solid black
-    "x": 80,    # pending on  → dark gray
-    "o": 175,   # pending off → light gray
-    "O": 240,   # off         → near white
+    "X": 0,  # on          → solid black
+    "x": 80,  # pending on  → dark gray
+    "o": 175,  # pending off → light gray
+    "O": 240,  # off         → near white
 }
 DEFAULT_FILL = 128
 
@@ -63,7 +63,7 @@ def print_image_chunks(p, img):
     h = img.size[1]
     for y in range(0, h, OPTIMAL_HEIGHT):
         box = (0, y, MAX_WIDTH, min(y + OPTIMAL_HEIGHT, h))
-        p.image(img_1bit.crop(box), impl="graphics")
+        p.image(img_1bit.crop(box), impl="graphics", center=False)
 
 
 def print_receipt():
@@ -71,12 +71,12 @@ def print_receipt():
     resp.raise_for_status()
     data = resp.json()
 
-    state       = data.get("state", [])
-    mode        = data.get("mode", "Unknown")
-    pending     = data.get("pending_pixel_count", 0)
-    changed_1h  = data.get("pixels_changed_last_hour_formatted", "0")
+    state = data.get("state", [])
+    mode = data.get("mode", "Unknown")
+    pending = data.get("pending_pixel_count", 0)
+    changed_1h = data.get("pixels_changed_last_hour_formatted", "0")
     changed_24h = data.get("pixels_changed_last_day_formatted", "0")
-    total       = data.get("pixel_change_count_formatted", "0")
+    total = data.get("pixel_change_count_formatted", "0")
 
     p = Serial(devfile=SERIAL_PORT, baudrate=BAUD, dsrdtr=True)
     p.hw("init")
