@@ -13,7 +13,7 @@ from escpos.printer import Serial
 
 PORT = "/dev/ttyUSB0"
 BAUD = 115200
-MAX_WIDTH = 576
+MAX_WIDTH = 512
 OPTIMAL_HEIGHT = 48
 
 API_URL = "https://kilopx.com/api/1/health"
