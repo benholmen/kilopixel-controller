@@ -1,13 +1,19 @@
-#!/usr/bin/python
-
-# Before running this script start pigpiod:
-# sudo pigpiod
+#!/usr/bin/env python3
+# /// script
+# dependencies = [
+#   "requests",
+#   "pyserial",
+#   "pigpio",
+# ]
+# ///
 
 import os
 import time
 import pigpio
 import json
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util import Retry
 import serial
 import sys
 import http.client
@@ -84,52 +90,41 @@ def get_next_pixel():
 
 	try:
 		start_time = time.time()
-		conn.request("GET", url)
-		response = conn.getresponse()
+		response = api.get(f"https://{config['api_host']}/api/{config['kilopixel_id']}/next", timeout=10)
 
-		response_data = response.read().decode()
-		if response.status == 200:
-			print("Next pixel:", json.loads(response_data))
+		if response.status_code == 200:
+			data = response.json()
+			print("Next pixel:", data)
 			elapsed = time.time() - start_time
 			print("GET time:", str(int(elapsed * 1000)), "ms")
 
-			return json.loads(response_data)
+			return data
 		else:
-			print("An error occurred when getting the next pixel: HTTP", response.status)
+			print("An error occurred when getting the next pixel: HTTP", response.status_code)
 	except Exception as e:
 		print("An error occurred when getting the next pixel:", e)
 
 def save_pixel_state(x, y, state):
-	url = "/api/" + str(config['kilopixel_id']) + "/pixel"
+    try:
+        start_time = time.time()
+        response = api.put(
+            url=f"https://{config['api_host']}/api/{config['kilopixel_id']}/pixel",
+            data={"x": x, "y": y, "state": state},
+            headers={"Authorization": f"Bearer {config['api_key']}"},
+            timeout=10
+        )
 
-	headers = {
-		"Authorization": "Bearer " + config['api_key'],
-		"Content-Type": "application/x-www-form-urlencoded",
-	}
-	form_data = urllib.parse.urlencode({
-		"x": x,
-		"y": y,
-		"state": state,
-	})
-
-	print(str(form_data))
-
-	try:
-		start_time = time.time()
-		conn.request("PUT", url, body=form_data, headers=headers)
-		response = conn.getresponse()
-
-		response_data = response.read().decode()
-		if response.status == 200:
-			elapsed = time.time() - start_time
-			print("PUT time:", str(int(elapsed * 1000)), "ms")
-			print(response_data);
-
-			return json.loads(response_data)
-		else:
-			print("An error occurred when saving the pixel state: HTTP", response.status)
-	except Exception as e:
-		print("An error occurred when saving the pixel state:", e)
+        if response.status_code == 200:
+            elapsed = time.time() - start_time
+            print(f"PUT time: {int(elapsed * 1000)} ms")
+            print(response.text)
+            return response.json()
+        else:
+            print(
+                f"An error occurred when saving the pixel state: HTTP {response.status_code}"
+            )
+    except Exception as e:
+        print("An error occurred when saving the pixel state:", e)
 
 # load config
 with open('config.json') as config_file:
@@ -152,8 +147,16 @@ grbl.flushInput()
 print('running setup gcode')
 send_gcode_from_file(grbl, 'gcode/setup.gcode')
 
-# open HTTPS connection that will be re-used
-conn = http.client.HTTPSConnection(config['api_host'])
+api = requests.Session()
+api.headers.update({"User-Agent": "kilopixel-controller"})
+api.mount(
+    'https://',
+    HTTPAdapter(max_retries=Retry(
+		total=5,
+		backoff_factor=1,
+		status_forcelist=[500, 502, 503, 504]
+	))
+)
 
 # loop forever
 pixels_since_last_home = 0
