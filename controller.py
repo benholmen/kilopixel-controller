@@ -138,7 +138,7 @@ if not pigpio.connected:
 
 # init grbl
 print('initializing GRBL...')
-grbl = serial.Serial('/dev/ttyUSB0', 115200)
+grbl = serial.Serial('/dev/ttyUSB0', 115200, timeout=1, write_timeout=2)
 grbl.write(b"\r\n\r\n")
 time.sleep(1)
 grbl.flushInput()
