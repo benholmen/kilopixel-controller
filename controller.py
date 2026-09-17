@@ -19,90 +19,123 @@ import sys
 import http.client
 import urllib
 
-def send_gcode_from_file(grbl, filename):
-	# note this probably wouldn't be a great idea for long gcode files. But this application should be VERY short gcode files
-	gcode_file = open(filename, 'r')
-	gcode = gcode_file.read()
-	gcode_file.close()
 
-	send_gcode(grbl, gcode)
+def send_gcode_from_file(grbl, filename):
+    # note this probably wouldn't be a great idea for long gcode files. But this application should be VERY short gcode files
+    gcode_file = open(filename, "r")
+    gcode = gcode_file.read()
+    gcode_file.close()
+
+    send_gcode(grbl, gcode)
+
 
 def send_gcode(grbl, gcode):
     for line in gcode.splitlines():
         line = line.strip()
         if len(line) > 1:
-            print("    ", line)
+            print("	", line)
             grbl.write(f"{line}\n".encode())
             grbl_response = grbl.readline()
-            print("        ", grbl_response.decode('utf-8').strip())
+            print("		", grbl_response.decode("utf-8").strip())
 
             # check status
             grbl.write(b"?")
             grbl_status = grbl.readline()
             while grbl_status.find("Idle".encode()) == -1:
-                print('        ', grbl_status.decode('utf-8').strip())
+                print("		", grbl_status.decode("utf-8").strip())
                 grbl.write(b"?")
                 grbl_status = grbl.readline()
                 time.sleep(0.1)
 
-def still_connected(grbl):
-	grbl.write(b"?")
-	grbl_response = grbl.readline()
 
-	if len(grbl_response) > 0:
-		return 1
-	else:
-		return 0
+def still_connected(grbl):
+    grbl.write(b"?")
+    grbl_response = grbl.readline()
+
+    if len(grbl_response) > 0:
+        return 1
+    else:
+        return 0
+
 
 def home():
-	send_gcode(grbl, '$H')
+    send_gcode(grbl, "$H")
+
 
 def park():
-	send_gcode(grbl, 'G0 X' + str(config['x_max_travel']) + ' Y' + str(config['y_max_travel']))
+    send_gcode(
+        grbl, "G0 X" + str(config["x_max_travel"]) + " Y" + str(config["y_max_travel"])
+    )
+
 
 def poke_pixel(x, y):
-	x_real = x * config['pixel_width'] + config['x_offset']
-	y_real = y * config['pixel_height'] + config['y_offset']
+    x_real = x * config["pixel_width"] + config["x_offset"]
+    y_real = y * config["pixel_height"] + config["y_offset"]
 
-	# move to pixel
-	send_gcode(grbl, 'G0 X' + str(x_real) + ' Y' + str(y_real))
+    # move to pixel
+    send_gcode(grbl, "G0 X" + str(x_real) + " Y" + str(y_real))
 
-	# poke pixel
-	send_gcode(grbl, 'G0 Z4.5 X' + str(x_real + config['poke_offset']['x']) + ' Y' + str(y_real + config['poke_offset']['y']))
+    # poke pixel
+    send_gcode(
+        grbl,
+        "G0 Z4.2 X"
+        + str(x_real + config["poke_offset"]["x"])
+        + " Y"
+        + str(y_real + config["poke_offset"]["y"]),
+    )
 
-	# move right to clear pixel and retract
-	send_gcode(grbl, 'G0 Z0 X' + str(x_real + config['retract_offset']['x']) + ' Y' + str(y_real + config['retract_offset']['y']))
+    # move right to clear pixel
+    send_gcode(grbl, "G0 X" + str(x_real + config["retract_offset"]["x"]))
 
-	# back off
-	send_gcode(grbl, 'G0 Z0.2')
+    # retract
+    send_gcode(grbl, "G0 Z0 Y" + str(y_real + config["retract_offset"]["y"]))
+
+    # back off
+    send_gcode(grbl, "G0 Z0.2")
+
 
 def read_pixel(x, y):
-	x_real = x * config['pixel_width'] + config['x_offset']
-	y_real = y * config['pixel_height'] + config['y_offset']
+    x_real = x * config["pixel_width"] + config["x_offset"]
+    y_real = y * config["pixel_height"] + config["y_offset"]
 
-	# move to reading position
-	send_gcode(grbl, 'G1 X' + str(x_real + config['read_offset']['x']) + ' Y' + str(y_real + config['read_offset']['y']) + 'F5000')
+    # move to reading position
+    send_gcode(
+        grbl,
+        "G1 X"
+        + str(x_real + config["read_offset"]["x"])
+        + " Y"
+        + str(y_real + config["read_offset"]["y"])
+        + "F5000",
+    )
 
-	return 'O' if pigpio.read(config['pins']['reflective_sensor']) else 'X'
+    return "O" if pigpio.read(config["pins"]["reflective_sensor"]) else "X"
+
 
 def get_next_pixel():
-	url = "/api/" + str(config['kilopixel_id']) + "/next"
+    url = "/api/" + str(config["kilopixel_id"]) + "/next"
 
-	try:
-		start_time = time.time()
-		response = api.get(f"https://{config['api_host']}/api/{config['kilopixel_id']}/next", timeout=10)
+    try:
+        start_time = time.time()
+        response = api.get(
+            f"https://{config['api_host']}/api/{config['kilopixel_id']}/next",
+            timeout=10,
+        )
 
-		if response.status_code == 200:
-			data = response.json()
-			print("Next pixel:", data)
-			elapsed = time.time() - start_time
-			print("GET time:", str(int(elapsed * 1000)), "ms")
+        if response.status_code == 200:
+            data = response.json()
+            print("Next pixel:", data)
+            elapsed = time.time() - start_time
+            print("GET time:", str(int(elapsed * 1000)), "ms")
 
-			return data
-		else:
-			print("An error occurred when getting the next pixel: HTTP", response.status_code)
-	except Exception as e:
-		print("An error occurred when getting the next pixel:", e)
+            return data
+        else:
+            print(
+                "An error occurred when getting the next pixel: HTTP",
+                response.status_code,
+            )
+    except Exception as e:
+        print("An error occurred when getting the next pixel:", e)
+
 
 def save_pixel_state(x, y, state):
     try:
@@ -111,7 +144,7 @@ def save_pixel_state(x, y, state):
             url=f"https://{config['api_host']}/api/{config['kilopixel_id']}/pixel",
             data={"x": x, "y": y, "state": state},
             headers={"Authorization": f"Bearer {config['api_key']}"},
-            timeout=10
+            timeout=10,
         )
 
         if response.status_code == 200:
@@ -126,88 +159,98 @@ def save_pixel_state(x, y, state):
     except Exception as e:
         print("An error occurred when saving the pixel state:", e)
 
+
 # load config
-with open('config.json') as config_file:
-	config = json.load(config_file)
+with open("config.json") as config_file:
+    config = json.load(config_file)
 
 # init GPIO to read reflective sensor
 pigpio = pigpio.pi()
 if not pigpio.connected:
-	print('could not init pigpio, did you run sudo pigpiod?')
-	exit(0)
+    print("could not init pigpio, did you run sudo pigpiod?")
+    exit(0)
 
 # init grbl
-print('initializing GRBL...')
-grbl = serial.Serial('/dev/ttyUSB0', 115200, timeout=1, write_timeout=2)
+print("initializing GRBL...")
+grbl = serial.Serial("/dev/ttyUSB0", 115200, timeout=1, write_timeout=2)
 grbl.write(b"\r\n\r\n")
 time.sleep(1)
 grbl.flushInput()
 
 # run config gcode
-print('running setup gcode')
-send_gcode_from_file(grbl, 'gcode/setup.gcode')
+print("running setup gcode")
+send_gcode_from_file(grbl, "gcode/setup.gcode")
 
 api = requests.Session()
 api.headers.update({"User-Agent": "kilopixel-controller"})
 api.mount(
-    'https://',
-    HTTPAdapter(max_retries=Retry(
-		total=5,
-		backoff_factor=1,
-		status_forcelist=[500, 502, 503, 504]
-	))
+    "https://",
+    HTTPAdapter(
+        max_retries=Retry(
+            total=5, backoff_factor=1, status_forcelist=[500, 502, 503, 504]
+        )
+    ),
 )
 
 # loop forever
-pixels_since_last_home = 0
+pixels_poked_since_last_home = 0
 pixel = get_next_pixel()
 while True:
-	# reload config
-	with open('config.json') as config_file:
-		config = json.load(config_file)
+    # reload config
+    with open("config.json") as config_file:
+        config = json.load(config_file)
 
-	if pixels_since_last_home > 100:
-		home()
-		pixels_since_last_home = 0
+    if pixels_poked_since_last_home > 100:
+        home()
+        pixels_poked_since_last_home = 0
 
-	if pixel is None or pixel['x'] is None or pixel['y'] is None:
-		# submission likely just finished
-		if "--stop-on-no-pixel" in sys.argv:
-			print('pixel is None, parking + exiting')
-			park()
-			break
-		else:
-			# park the machine for a nice timelapse before getting the next pixel
-			park()
-			time.sleep(5)
-			pixel = get_next_pixel()
-	else:
-		print('next pixel: ' + str(pixel))
+    if pixel is None or pixel["x"] is None or pixel["y"] is None:
+        # submission likely just finished
+        if "--stop-on-no-pixel" in sys.argv:
+            print("pixel is None, parking + exiting")
+            park()
+            break
+        else:
+            # park the machine for a nice timelapse before getting the next pixel
+            park()
+            time.sleep(5)
+            pixel = get_next_pixel()
+    else:
+        print("next pixel: " + str(pixel))
 
-		current_pixel_state = read_pixel(pixel['x'], pixel['y'])
-        
-		if pixel['poke'] and current_pixel_state.lower() == pixel['state'].lower():
-			print('no need to poke')
-		elif pixel['poke']:
-			print('poking')
-			poke_pixel(pixel['x'], pixel['y'])
+        current_pixel_state = read_pixel(pixel["x"], pixel["y"])
 
-		pixel_state = read_pixel(pixel['x'], pixel['y'])
+        if pixel["poke"] and current_pixel_state.lower() == pixel["state"].lower():
+            print("no need to poke")
+        elif pixel["poke"]:
+            print("poking")
+            poke_pixel(pixel["x"], pixel["y"])
 
-		if pixel['poke'] and pixel_state.lower() != pixel['state'].lower():
-			# poke the pixel again just in case
-			print('!! repoking pixel: ' + pixel_state.lower() + ' - ' + pixel['state'].lower())
-			poke_pixel(pixel['x'], pixel['y'])
+            pixels_poked_since_last_home += 1
 
-			pixel_state = read_pixel(pixel['x'], pixel['y'])
+        pixel_state = read_pixel(pixel["x"], pixel["y"])
 
-		pixels_since_last_home += 1
-		pixel = save_pixel_state(pixel['x'], pixel['y'], pixel_state)
+        if pixel["poke"] and pixel_state.lower() != pixel["state"].lower():
+            # poke the pixel again just in case
+            print(
+                "!! repoking pixel: "
+                + pixel_state.lower()
+                + " - "
+                + pixel["state"].lower()
+            )
 
+            home()
+            pixels_poked_since_last_home = 0
 
-	if not still_connected(grbl):
-		print('lost connection')
-		break
+            poke_pixel(pixel["x"], pixel["y"])
+
+            pixel_state = read_pixel(pixel["x"], pixel["y"])
+
+        pixel = save_pixel_state(pixel["x"], pixel["y"], pixel_state)
+
+    if not still_connected(grbl):
+        print("lost connection")
+        break
 
 # close grbl
 grbl.close()
