@@ -65,17 +65,6 @@ def print_image_chunks(p, img):
 
 
 def print_receipt():
-    resp = requests.get(API_URL, timeout=10)
-    resp.raise_for_status()
-    data = resp.json()
-
-    state = data.get("state", [])
-    mode = data.get("mode", "Unknown")
-    pending = data.get("pending_pixel_count", 0)
-    changed_1h = data.get("pixels_changed_last_hour_formatted", "0")
-    changed_24h = data.get("pixels_changed_last_day_formatted", "0")
-    total = data.get("pixel_change_count_formatted", "0")
-
     p = Serial(devfile=SERIAL_PORT, baudrate=BAUD, dsrdtr=True)
     p.profile.profile_data["media"]["width"]["pixels"] = MAX_WIDTH
     p.hw("init")
@@ -86,6 +75,24 @@ def print_receipt():
     p.set(align="center", bold=True)
     p.text("\nSHIFT - Eau Claire, WI\n\n")
     p.hw("init")
+
+    try:
+        resp = requests.get(API_URL, timeout=10)
+        resp.raise_for_status()
+        data = resp.json()
+    except Exception:
+        p.set(align="center")
+        p.text("Could not reach kilopx.com.\nPlease try again.\n")
+        p.cut()
+        p.close()
+        raise
+
+    state = data.get("state", [])
+    mode = data.get("mode", "Unknown")
+    pending = data.get("pending_pixel_count", 0)
+    changed_1h = data.get("pixels_changed_last_hour_formatted", "0")
+    changed_24h = data.get("pixels_changed_last_day_formatted", "0")
+    total = data.get("pixel_change_count_formatted", "0")
 
     if state:
         grid_img = render_pixel_grid(state)

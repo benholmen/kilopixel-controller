@@ -61,6 +61,8 @@ def main():
     changed_24h = data.get("pixels_changed_last_day_formatted", "0")
     total = data.get("pixel_change_count_formatted", "0")
 
+    grid_img = render_pixel_grid(state) if state else None
+
     p = Serial(devfile=SERIAL_PORT, baudrate=BAUD, dsrdtr=True)
     p.profile.profile_data["media"]["width"]["pixels"] = MAX_WIDTH
     p.hw("init")
@@ -72,8 +74,7 @@ def main():
     p.text("\nSHIFT - Eau Claire, WI\n\n")
     p.hw("init")
 
-    if state:
-        grid_img = render_pixel_grid(state)
+    if grid_img is not None:
         print_image_chunks(p, grid_img)
 
     now = datetime.now()
