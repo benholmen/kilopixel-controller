@@ -11,7 +11,7 @@ from datetime import datetime
 from PIL import Image, ImageDraw
 from escpos.printer import Serial
 
-PORT = "/dev/ttyUSB0"
+PORT = "/dev/printer"
 BAUD = 115200
 MAX_WIDTH = 512
 OPTIMAL_HEIGHT = 48

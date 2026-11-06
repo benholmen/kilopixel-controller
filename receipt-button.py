@@ -25,7 +25,7 @@ from escpos.printer import Serial
 
 BUTTON_GPIO = 17  # BCM pin; wired button-to-GND
 
-SERIAL_PORT = "/dev/ttyUSB0"
+SERIAL_PORT = "/dev/printer"
 BAUD = 115200
 MAX_WIDTH = 512
 OPTIMAL_HEIGHT = 400

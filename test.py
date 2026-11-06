@@ -53,7 +53,7 @@ with open('config.json') as config_file:
 
 # init grbl
 print('init grbl')
-grbl = serial.Serial('/dev/ttyUSB0', 115200)
+grbl = serial.Serial('/dev/grbl', 115200)
 grbl.write(b"\r\n\r\n")
 print('...')
 time.sleep(2)
